@@ -35,15 +35,47 @@ MODEL=$(
     /model name/ {gsub(/^[ \t]+/, "", $2); print $2; exit}
     /Model/      {gsub(/^[ \t]+/, "", $2); print $2; exit}
     /Hardware/   {gsub(/^[ \t]+/, "", $2); print $2; exit}
+    /Processor/  {gsub(/^[ \t]+/, "", $2); print $2; exit}
   ' /proc/cpuinfo 2>/dev/null
 )
 
+# Jeśli nie znaleziono, spróbuj alternatywnych metod
 if [ -z "$MODEL" ]; then
-  MODEL="Unknown (no recognizable model field in /proc/cpuinfo)"
+  # Sprawdź architekturę
+  ARCH=$(uname -m 2>/dev/null)
+  
+  # Dla ARM64/aarch64 spróbuj wyciągnąć szczegóły
+  if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+    MODEL="ARM64/AArch64 CPU"
+    
+    # Spróbuj wyciągnąć więcej szczegółów
+    CPU_IMPLEMENTER=$(awk -F: '/CPU implementer/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
+    CPU_ARCHITECTURE=$(awk -F: '/CPU architecture/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
+    CPU_VARIANT=$(awk -F: '/CPU variant/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
+    CPU_PART=$(awk -F: '/CPU part/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
+    
+    if [[ -n "$CPU_IMPLEMENTER" ]] || [[ -n "$CPU_PART" ]]; then
+      MODEL="ARM64 (Arch: ${CPU_ARCHITECTURE:-N/A}, Implementer: ${CPU_IMPLEMENTER:-N/A}, Part: ${CPU_PART:-N/A})"
+    fi
+    
+    # Spróbuj lscpu jako fallback
+    if command -v lscpu &>/dev/null; then
+      LSCPU_MODEL=$(lscpu 2>/dev/null | grep -i "model name" | cut -d: -f2 | xargs)
+      if [[ -n "$LSCPU_MODEL" ]]; then
+        MODEL="$LSCPU_MODEL"
+      fi
+    fi
+  else
+    MODEL="Unknown CPU ($ARCH architecture)"
+  fi
 fi
+
+# Dodaj liczbę rdzeni
+CPU_CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || echo "Unknown")
 
 echo "CPU model:"
 echo "  $MODEL"
+echo "  Cores: $CPU_CORES"
 echo ""
 
 # Top 5 procesów wg CPU – zdejmujemy na chwilę pipefail/set -e żeby SIGPIPE nas nie zabił
