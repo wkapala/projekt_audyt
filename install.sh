@@ -92,6 +92,31 @@ create_directories() {
             print_warning "Already exists: $dir"
         fi
     done
+
+    # NOWE: Ustaw poprawne uprawnienia dla użytkownika
+    if [[ "$INSTALL_TARGET" == "/opt/sysaudit" ]]; then
+        # W trybie production, upewnij się że user może pisać do logs i reports
+        print_step "Setting permissions for logs and reports..."
+        
+        # Jeśli uruchomione przez sudo, daj uprawnienia prawdziwemu userowi
+        if [[ -n "${SUDO_USER}" ]]; then
+            chown -R "${SUDO_USER}:${SUDO_USER}" "$INSTALL_TARGET/logs"
+            chown -R "${SUDO_USER}:${SUDO_USER}" "$INSTALL_TARGET/reports"
+            print_success "Ownership set to: ${SUDO_USER}"
+        else
+            chown -R "$USER:$USER" "$INSTALL_TARGET/logs"
+            chown -R "$USER:$USER" "$INSTALL_TARGET/reports"
+            print_success "Ownership set to: $USER"
+        fi
+        
+        chmod 755 "$INSTALL_TARGET/logs"
+        chmod 755 "$INSTALL_TARGET/reports"
+        print_success "Permissions set: 755"
+    else
+        # W trybie development
+        chmod 755 "$INSTALL_TARGET/logs"
+        chmod 755 "$INSTALL_TARGET/reports"
+    fi
 }
 
 # Kopiowanie plików
