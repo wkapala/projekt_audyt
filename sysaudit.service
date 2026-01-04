@@ -1,0 +1,24 @@
+[Unit]
+Description=System Audit Report
+Documentation=file:///opt/sysaudit/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/opt/sysaudit/send_report.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sysaudit
+
+# Security hardening
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/sysaudit/logs /opt/sysaudit/reports
+
+[Install]
+WantedBy=multi-user.target

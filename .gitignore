@@ -1,0 +1,24 @@
+# Katalogi generowane podczas działania
+logs/
+reports/
+*.log
+
+# Pliki tymczasowe
+*.tmp
+*.bak
+*~
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Pliki IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backupy
+*.backup
+backup/
