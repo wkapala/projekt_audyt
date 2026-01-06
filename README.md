@@ -102,6 +102,26 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
 
 ## 🚀 Instalacja
 
+### ⚠️ WAŻNE: Konfiguracja przed pierwszym użyciem
+
+**Przed uruchomieniem systemu MUSISZ zedytować plik `config.conf` i zmienić adresy IP!**
+
+Plik `config.conf` zawiera przykładowe adresy IP (`192.168.64.x`), które działają tylko w środowisku deweloperskim autora. Musisz je dostosować do swojej sieci:
+
+```bash
+# Edytuj config.conf
+nano config.conf
+
+# Zmień te wartości:
+PING_TARGETS=("10.0.0.10" "10.0.0.11" "10.0.0.12")  # Twoje hosty
+CENTRAL_HOST="10.0.0.10"                             # Twój host centralny
+```
+
+**Alternatywnie:** Jeśli nie potrzebujesz funkcji connectivity test, wyłącz ją:
+```bash
+ENABLE_CONNECTIVITY_TEST=false
+```
+
 ### Instalacja automatyczna
 
 1. **Pobierz projekt**
@@ -110,19 +130,25 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
    cd /path/to/projekt_audyt
    ```
 
-2. **Uruchom instalator**
+2. **⚠️ EDYTUJ config.conf** (WYMAGANE!)
+   ```bash
+   nano config.conf
+   # Zmień PING_TARGETS i CENTRAL_HOST na swoje adresy IP
+   ```
+
+3. **Uruchom instalator**
    ```bash
    chmod +x install.sh
    sudo ./install.sh
    ```
 
-3. **Wybierz lokalizację**
+4. **Wybierz lokalizację**
    - Opcja 1: `/opt/sysaudit` (produkcja, wymaga sudo)
    - Opcja 2: Bieżący katalog (development)
 
-4. **Skonfiguruj SSH** (opcjonalne)
+5. **Skonfiguruj SSH** (opcjonalne, tylko dla funkcji report sending)
    - Instalator pomoże wygenerować klucz SSH
-   - Następnie uruchom: `ssh-copy-id audit@192.168.64.3`
+   - Następnie uruchom: `ssh-copy-id audit@YOUR_CENTRAL_HOST`
 
 ### Konfiguracja hosta centralnego
 
@@ -252,7 +278,10 @@ MODULE_DIR="${INSTALL_DIR}/modules"
 LOG_DIR="${INSTALL_DIR}/logs"
 REPORT_DIR="${INSTALL_DIR}/reports"
 
-# Konfiguracja sieci
+# Włącz/wyłącz connectivity test
+ENABLE_CONNECTIVITY_TEST=true
+
+# Konfiguracja sieci - ⚠️ ZMIEŃ NA SWOJE ADRESY IP!
 PING_TARGETS=("192.168.64.3" "192.168.64.4" "192.168.64.5")
 CENTRAL_HOST="192.168.64.3"
 CENTRAL_USER="audit"
@@ -273,12 +302,19 @@ DISK_WARNING_THRESHOLD=90   # procent
 
 ### Personalizacja
 
-1. **Zmiana hostów do testowania**
+⚠️ **UWAGA:** Domyślne adresy IP (`192.168.64.x`) są przykładowe i działają tylko w środowisku deweloperskim autora. Przed użyciem MUSISZ je zmienić!
+
+1. **Wyłączenie connectivity test** (jeśli nie masz innych hostów)
    ```bash
-   PING_TARGETS=("10.0.0.1" "10.0.0.2" "google.com")
+   ENABLE_CONNECTIVITY_TEST=false
    ```
 
-2. **Zmiana hosta centralnego**
+2. **Zmiana hostów do testowania**
+   ```bash
+   PING_TARGETS=("10.0.0.1" "10.0.0.2" "10.0.0.3")
+   ```
+
+3. **Zmiana hosta centralnego** (dla funkcji send_report.sh)
    ```bash
    CENTRAL_HOST="10.0.1.100"
    CENTRAL_USER="sysadmin"

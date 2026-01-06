@@ -25,14 +25,22 @@ echo "--- LISTENING PORTS (TCP/UDP) ---"
 ss -tuln
 echo ""
 
-echo "--- CONNECTIVITY TEST ---"
+# Test łączności - tylko jeśli włączony w konfiguracji
+if [[ "${ENABLE_CONNECTIVITY_TEST:-true}" == "true" ]]; then
+    echo "--- CONNECTIVITY TEST ---"
 
-for H in "${PING_TARGETS[@]}"; do
-    if ping -c"$PING_COUNT" -W"$PING_TIMEOUT" "$H" >/dev/null 2>&1; then
-        echo -e "${GREEN}✓ OK:${RESET} $H is reachable"
+    if [[ ${#PING_TARGETS[@]} -eq 0 ]]; then
+        echo "  (no ping targets configured)"
     else
-        echo -e "${RED}✗ FAIL:${RESET} Cannot reach $H"
+        for H in "${PING_TARGETS[@]}"; do
+            if ping -c"$PING_COUNT" -W"$PING_TIMEOUT" "$H" >/dev/null 2>&1; then
+                echo -e "${GREEN}✓ OK:${RESET} $H is reachable"
+            else
+                echo -e "${RED}✗ FAIL:${RESET} Cannot reach $H"
+            fi
+        done
     fi
-done
+    echo ""
+fi
 
 log_msg "NET" "Raport sieciowy wygenerowany poprawnie."
