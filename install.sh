@@ -177,30 +177,18 @@ configure_ssh() {
     print_step "SSH Configuration (optional)"
 
     echo ""
-    echo "For automatic report sending, you need to configure SSH key authentication"
-    echo "to the central host specified in config.conf"
+    echo "For automatic report sending, you need to configure SSH key authentication."
     echo ""
-    echo "Current central host: 192.168.64.3 (audit@192.168.64.3)"
+    echo "To setup SSH (optional):"
+    echo "  1. Generate SSH key:"
+    echo "     ssh-keygen -t ed25519 -C \"sysaudit@\$(hostname)\""
     echo ""
-
-    read -p "Do you want to setup SSH key now? [y/N]: " -n 1 -r
-    echo
-
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        if [[ ! -f ~/.ssh/id_rsa ]] && [[ ! -f ~/.ssh/id_ed25519 ]]; then
-            print_step "Generating SSH key..."
-            ssh-keygen -t ed25519 -C "sysaudit@$(hostname)" -N "" -f ~/.ssh/id_ed25519
-            print_success "SSH key generated: ~/.ssh/id_ed25519"
-        fi
-
-        echo ""
-        echo "Now copy the SSH key to central host:"
-        echo "  ssh-copy-id audit@192.168.64.3"
-        echo ""
-    else
-        print_warning "Skipped SSH configuration"
-        print_warning "Configure it later for automatic report sending"
-    fi
+    echo "  2. Copy key to central host (update IP to your central host):"
+    echo "     ssh-copy-id audit@192.168.64.3"
+    echo ""
+    echo "  3. Test connection:"
+    echo "     ssh audit@192.168.64.3 'echo SUCCESS'"
+    echo ""
 }
 
 # Test instalacji

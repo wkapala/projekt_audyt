@@ -87,20 +87,9 @@ drwxr-xr-x ... audit audit ... /opt/sysaudit/reports
 
 **❌ Jeśli widzisz `root root` - instalacja się nie powiodła!**
 
-### 1.6. Utwórz katalog do zbierania raportów
-```bash
-sudo mkdir -p /opt/sysaudit/central_reports
-sudo chown $USER:$USER /opt/sysaudit/central_reports
-chmod 755 /opt/sysaudit/central_reports
-ls -ld /opt/sysaudit/central_reports
-```
+**ℹ️ Katalog `central_reports` zostanie utworzony automatycznie przy pierwszym wysłaniu raportu.**
 
-**Oczekiwany output:**
-```
-drwxr-xr-x 2 audit audit 4096 Jan 6 XX:XX /opt/sysaudit/central_reports
-```
-
-### 1.7. Dodaj użytkownika do grupy 'adm' (dostęp do auth.log)
+### 1.6. Dodaj użytkownika do grupy 'adm' (dostęp do auth.log)
 ```bash
 sudo usermod -a -G adm $USER
 
@@ -112,7 +101,7 @@ groups
 # Powinno pokazać: audit adm ...
 ```
 
-### 1.8. TEST: Uruchom pierwszy audyt
+### 1.7. TEST: Uruchom pierwszy audyt
 ```bash
 /opt/sysaudit/audyt_main.sh --full
 ```
@@ -123,7 +112,7 @@ groups
 - ✅ Czy moduł CPU pokazuje architekturę i liczbę rdzeni
 - ✅ Czy moduł Security pokazuje failed logins (lub komunikat o grupie adm)
 
-### 1.9. Sprawdź czy powstał log i raport
+### 1.8. Sprawdź czy powstał log i raport
 ```bash
 # Log
 cat /opt/sysaudit/logs/audyt.log
