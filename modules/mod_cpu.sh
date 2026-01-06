@@ -29,53 +29,46 @@ echo "  5 min : $load5"
 echo " 15 min : $load15"
 echo ""
 
-# Model procesora – wersja odporna na różne /proc/cpuinfo (x86, ARM, Apple Silicon itd.)
-MODEL=$(
-  awk -F: '
-    /model name/ {gsub(/^[ \t]+/, "", $2); print $2; exit}
-    /Model/      {gsub(/^[ \t]+/, "", $2); print $2; exit}
-    /Hardware/   {gsub(/^[ \t]+/, "", $2); print $2; exit}
-    /Processor/  {gsub(/^[ \t]+/, "", $2); print $2; exit}
-  ' /proc/cpuinfo 2>/dev/null
-)
+# Wykryj architekturę procesora
+ARCH=$(uname -m)
 
-# Jeśli nie znaleziono, spróbuj alternatywnych metod
-if [ -z "$MODEL" ]; then
-  # Sprawdź architekturę
-  ARCH=$(uname -m 2>/dev/null)
-  
-  # Dla ARM64/aarch64 spróbuj wyciągnąć szczegóły
-  if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+# Model procesora – różne podejście dla x86 i ARM
+if [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]]; then
+    # ARM: używamy CPU implementer i CPU part
     MODEL="ARM64/AArch64 CPU"
-    
-    # Spróbuj wyciągnąć więcej szczegółów
     CPU_IMPLEMENTER=$(awk -F: '/CPU implementer/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
-    CPU_ARCHITECTURE=$(awk -F: '/CPU architecture/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
-    CPU_VARIANT=$(awk -F: '/CPU variant/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
     CPU_PART=$(awk -F: '/CPU part/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
-    
-    if [[ -n "$CPU_IMPLEMENTER" ]] || [[ -n "$CPU_PART" ]]; then
-      MODEL="ARM64 (Arch: ${CPU_ARCHITECTURE:-N/A}, Implementer: ${CPU_IMPLEMENTER:-N/A}, Part: ${CPU_PART:-N/A})"
+    CPU_VARIANT=$(awk -F: '/CPU variant/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
+    CPU_REVISION=$(awk -F: '/CPU revision/ {print $2; exit}' /proc/cpuinfo | tr -d ' ')
+
+    if [[ -n "$CPU_IMPLEMENTER" ]] && [[ -n "$CPU_PART" ]]; then
+        MODEL="ARM64 (Implementer: $CPU_IMPLEMENTER, Part: $CPU_PART"
+        [[ -n "$CPU_VARIANT" ]] && MODEL="$MODEL, Variant: $CPU_VARIANT"
+        [[ -n "$CPU_REVISION" ]] && MODEL="$MODEL, Revision: $CPU_REVISION"
+        MODEL="$MODEL)"
     fi
-    
-    # Spróbuj lscpu jako fallback
-    if command -v lscpu &>/dev/null; then
-      LSCPU_MODEL=$(lscpu 2>/dev/null | grep -i "model name" | cut -d: -f2 | xargs)
-      if [[ -n "$LSCPU_MODEL" ]]; then
-        MODEL="$LSCPU_MODEL"
-      fi
+
+    # Sprawdź czy jest "Hardware" (niektóre ARM mają to pole)
+    HARDWARE=$(awk -F: '/^Hardware/ {gsub(/^[ \t]+/, "", $2); print $2; exit}' /proc/cpuinfo 2>/dev/null)
+    if [[ -n "$HARDWARE" ]]; then
+        MODEL="$MODEL - $HARDWARE"
     fi
-  else
-    MODEL="Unknown CPU ($ARCH architecture)"
-  fi
+else
+    # x86/x64: standardowe "model name"
+    MODEL=$(awk -F: '/model name/ {gsub(/^[ \t]+/, "", $2); print $2; exit}' /proc/cpuinfo 2>/dev/null)
+
+    if [[ -z "$MODEL" ]]; then
+        MODEL="Unknown CPU model"
+    fi
 fi
 
-# Dodaj liczbę rdzeni
+# Liczba rdzeni (cores)
 CPU_CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || echo "Unknown")
 
 echo "CPU model:"
 echo "  $MODEL"
-echo "  Cores: $CPU_CORES"
+echo "  Architecture: $ARCH"
+echo "  CPU cores: $CPU_CORES"
 echo ""
 
 # Top 5 procesów wg CPU – zdejmujemy na chwilę pipefail/set -e żeby SIGPIPE nas nie zabił

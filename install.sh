@@ -140,6 +140,22 @@ copy_files() {
     chmod +x "$INSTALL_TARGET"/*.sh
     chmod +x "$INSTALL_TARGET/modules"/*.sh
     print_success "Set executable permissions"
+
+    # Ustaw właściciela katalogów logs i reports (fix permission issue)
+    if [[ "$INSTALL_TARGET" == "/opt/sysaudit" ]]; then
+        print_step "Setting ownership for logs and reports directories..."
+        if [[ -n "${SUDO_USER}" ]]; then
+            chown -R "${SUDO_USER}:${SUDO_USER}" "$INSTALL_TARGET/logs"
+            chown -R "${SUDO_USER}:${SUDO_USER}" "$INSTALL_TARGET/reports"
+            print_success "Set ownership to: ${SUDO_USER}:${SUDO_USER}"
+        else
+            chown -R "$USER:$USER" "$INSTALL_TARGET/logs"
+            chown -R "$USER:$USER" "$INSTALL_TARGET/reports"
+            print_success "Set ownership to: $USER:$USER"
+        fi
+        chmod 755 "$INSTALL_TARGET/logs"
+        chmod 755 "$INSTALL_TARGET/reports"
+    fi
 }
 
 # Aktualizacja ścieżek w config.conf dla instalacji w /opt

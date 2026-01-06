@@ -13,9 +13,10 @@ reports/
 .AppleDouble
 .LSOverride
 
-# Pliki IDE
+# Pliki IDE i AI tools
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 

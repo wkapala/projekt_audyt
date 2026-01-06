@@ -124,6 +124,46 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
    - Instalator pomoże wygenerować klucz SSH
    - Następnie uruchom: `ssh-copy-id audit@192.168.64.3`
 
+### Konfiguracja hosta centralnego
+
+**Na hoście centralnym (192.168.64.3):**
+
+1. **Zainstaluj projekt**
+   ```bash
+   git clone <repository-url> ~/projekt_audyt
+   cd ~/projekt_audyt
+   sudo ./install.sh
+   # Wybierz opcję 1 (/opt/sysaudit)
+   ```
+
+2. **Utwórz katalog do zbierania raportów**
+   ```bash
+   mkdir -p /opt/sysaudit/central_reports
+   chmod 755 /opt/sysaudit/central_reports
+   ```
+
+3. **Skonfiguruj użytkownika 'audit'** (jeśli nie istnieje)
+   ```bash
+   # Utwórz użytkownika
+   sudo useradd -m -s /bin/bash audit
+   sudo passwd audit
+
+   # Dodaj do grupy 'adm' (dostęp do logów systemowych)
+   sudo usermod -a -G adm audit
+   ```
+
+4. **Przygotuj SSH dla klientów**
+   - Na każdej maszynie klienckiej (VM1, VM2, VM3):
+   ```bash
+   ssh-keygen -t ed25519 -C "sysaudit@$(hostname)"
+   ssh-copy-id audit@192.168.64.3
+   ```
+
+   - Przetestuj połączenie:
+   ```bash
+   ssh audit@192.168.64.3 'echo SUCCESS'
+   ```
+
 ### Instalacja ręczna
 
 ```bash
@@ -513,6 +553,22 @@ which ps df ss ip
 # Ubuntu/Debian
 sudo apt-get install procps iproute2 iputils-ping
 ```
+
+### Problem: "Cannot access /var/log/auth.log" w module Security
+
+**Rozwiązanie:**
+```bash
+# Dodaj użytkownika do grupy 'adm' (dostęp do logów systemowych)
+sudo usermod -a -G adm $USER
+
+# Wyloguj się i zaloguj ponownie (lub użyj newgrp)
+newgrp adm
+
+# Sprawdź członkostwo w grupach
+groups
+```
+
+**Uwaga:** Plik `/var/log/auth.log` zawiera wrażliwe informacje bezpieczeństwa i wymaga uprawnień grupy `adm`.
 
 ---
 
