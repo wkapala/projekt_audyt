@@ -138,7 +138,8 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
 
 2. **Utwórz katalog do zbierania raportów**
    ```bash
-   mkdir -p /opt/sysaudit/central_reports
+   sudo mkdir -p /opt/sysaudit/central_reports
+   sudo chown audit:audit /opt/sysaudit/central_reports
    chmod 755 /opt/sysaudit/central_reports
    ```
 

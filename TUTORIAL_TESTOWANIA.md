@@ -89,9 +89,15 @@ drwxr-xr-x ... audit audit ... /opt/sysaudit/reports
 
 ### 1.6. Utwórz katalog do zbierania raportów
 ```bash
-mkdir -p /opt/sysaudit/central_reports
+sudo mkdir -p /opt/sysaudit/central_reports
+sudo chown $USER:$USER /opt/sysaudit/central_reports
 chmod 755 /opt/sysaudit/central_reports
 ls -ld /opt/sysaudit/central_reports
+```
+
+**Oczekiwany output:**
+```
+drwxr-xr-x 2 audit audit 4096 Jan 6 XX:XX /opt/sysaudit/central_reports
 ```
 
 ### 1.7. Dodaj użytkownika do grupy 'adm' (dostęp do auth.log)
