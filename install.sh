@@ -141,20 +141,21 @@ copy_files() {
     chmod +x "$INSTALL_TARGET/modules"/*.sh
     print_success "Set executable permissions"
 
-    # Ustaw właściciela katalogów logs i reports (fix permission issue)
+    # Ustaw właściciela całego katalogu /opt/sysaudit (fix permission issue)
     if [[ "$INSTALL_TARGET" == "/opt/sysaudit" ]]; then
-        print_step "Setting ownership for logs and reports directories..."
+        print_step "Setting ownership for /opt/sysaudit..."
         if [[ -n "${SUDO_USER}" ]]; then
-            chown -R "${SUDO_USER}:${SUDO_USER}" "$INSTALL_TARGET/logs"
-            chown -R "${SUDO_USER}:${SUDO_USER}" "$INSTALL_TARGET/reports"
+            chown -R "${SUDO_USER}:${SUDO_USER}" "$INSTALL_TARGET"
             print_success "Set ownership to: ${SUDO_USER}:${SUDO_USER}"
         else
-            chown -R "$USER:$USER" "$INSTALL_TARGET/logs"
-            chown -R "$USER:$USER" "$INSTALL_TARGET/reports"
+            chown -R "$USER:$USER" "$INSTALL_TARGET"
             print_success "Set ownership to: $USER:$USER"
         fi
+        chmod 755 "$INSTALL_TARGET"
         chmod 755 "$INSTALL_TARGET/logs"
         chmod 755 "$INSTALL_TARGET/reports"
+        chmod 755 "$INSTALL_TARGET/modules"
+        print_success "Set correct permissions (755)"
     fi
 }
 
