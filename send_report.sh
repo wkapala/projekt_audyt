@@ -52,6 +52,10 @@ send_report() {
         if timeout "$SSH_TIMEOUT" ssh -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes \
             "${CENTRAL_USER}@${CENTRAL_HOST}" "exit" 2>/dev/null; then
 
+            # Upewnij się że katalog central_reports istnieje na remote (automatycznie utworzy jeśli nie ma)
+            ssh -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes \
+                "${CENTRAL_USER}@${CENTRAL_HOST}" "mkdir -p ${CENTRAL_DIR}" 2>/dev/null || true
+
             # Połączenie działa, wysyłaj raport
             if scp -o ConnectTimeout="$SSH_TIMEOUT" "$LOCAL_REPORT" \
                 "${CENTRAL_USER}@${CENTRAL_HOST}:${CENTRAL_DIR}/" 2>/dev/null; then
