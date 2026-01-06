@@ -35,7 +35,17 @@ else
 fi
 echo ""
 
+# Wyłącz pipefail na chwilę (SIGPIPE od `last | head` nie powinien zabijać skryptu)
+set +e
 echo "--- RECENT LOGINS (last 10) ---"
 last | head -n 10
+last_status=$?
+set -e
+
+if [ $last_status -ne 0 ] && [ $last_status -ne 141 ]; then
+  echo "  (unable to list recent logins)"
+fi
+
+echo ""
 
 log_msg "SEC" "Raport bezpieczeństwa wygenerowany poprawnie."
