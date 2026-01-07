@@ -4,7 +4,7 @@
 
 ---
 
-## 📋 Spis treści
+##  Spis treści
 
 - [O projekcie](#o-projekcie)
 - [Funkcjonalności](#funkcjonalności)
@@ -20,7 +20,7 @@
 
 ---
 
-## 🎯 O projekcie
+##  O projekcie
 
 System Audit to narzędzie stworzone w ramach kursu Systemy Operacyjne. Projekt demonstruje:
 
@@ -34,7 +34,7 @@ Zamiast pisać w C, wykorzystujemy natywny język systemu operacyjnego (Bash) do
 
 ---
 
-## ✨ Funkcjonalności
+##  Funkcjonalności
 
 ### Moduły audytowe
 
@@ -79,7 +79,7 @@ Zamiast pisać w C, wykorzystujemy natywny język systemu operacyjnego (Bash) do
 
 ---
 
-## 📦 Wymagania systemowe
+##  Wymagania systemowe
 
 ### System operacyjny
 - Linux (testowane na Ubuntu Server)
@@ -102,11 +102,11 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 Szybki przewodnik uruchomienia projektu na 3 maszynach wirtualnych Ubuntu Server.
 
-### 📋 Przed rozpoczęciem
+###  Przed rozpoczęciem
 
 **Potrzebujesz:**
 - 3 maszyny wirtualne z Ubuntu Server (np. UTM/QEMU)
@@ -145,7 +145,7 @@ sudo passwd audit
 sudo usermod -aG adm audit
 ```
 
-**ℹ️ Katalog `central_reports` zostanie utworzony automatycznie przy pierwszym wysłaniu raportu przez klienta.**
+**ℹ Katalog `central_reports` zostanie utworzony automatycznie przy pierwszym wysłaniu raportu przez klienta.**
 
 ---
 
@@ -260,7 +260,7 @@ sudo /opt/sysaudit/setup_systemd.sh
 
 ---
 
-### ✅ Weryfikacja
+###  Weryfikacja
 
 #### Sprawdź logi
 
@@ -293,7 +293,7 @@ sudo systemctl list-timers sysaudit.timer
 
 ---
 
-### 📊 Podgląd raportów na Central Host
+###  Podgląd raportów na Central Host
 
 Na hoście centralnym (192.168.64.3):
 
@@ -313,7 +313,7 @@ watch -n 60 'ls -lth /opt/sysaudit/central_reports/ | head -10'
 
 ---
 
-### 📅 Harmonogram (przykład)
+###  Harmonogram (przykład)
 
 **Sugerowana konfiguracja dla 3 VM:**
 
@@ -340,7 +340,7 @@ Dzięki rozłożeniu w czasie unikniesz jednoczesnego obciążenia sieci.
 
 ---
 
-### ✨ Gotowe!
+###  Gotowe!
 
 Twój system audytu jest teraz w pełni skonfigurowany i działa automatycznie.
 
@@ -354,7 +354,7 @@ Twój system audytu jest teraz w pełni skonfigurowany i działa automatycznie.
 
 ---
 
-## 📖 Instalacja szczegółowa
+##  Instalacja szczegółowa
 
 ### Instalacja automatyczna
 
@@ -433,7 +433,7 @@ sudo chmod +x /opt/sysaudit/modules/*.sh
 
 ---
 
-## 💻 Użycie
+## Użycie
 
 ### Tryb interaktywny (menu)
 
@@ -542,7 +542,7 @@ DISK_WARNING_THRESHOLD=90   # procent
 
 ---
 
-## ⏰ Automatyzacja
+## Automatyzacja
 
 ### Opcja 1: Cron (tradycyjny)
 
@@ -589,7 +589,7 @@ Konfiguracja timera: `sysaudit.timer`
 
 ---
 
-## 🏗️ Architektura
+##  Architektura
 
 ### Struktura projektu
 
@@ -671,7 +671,7 @@ projekt_audyt/
 
 ---
 
-## 🎬 Demo Commands
+##  Demo Commands
 
 Szybka ściągawka z najważniejszymi komendami.
 
@@ -972,7 +972,7 @@ Central reports:  /opt/sysaudit/central_reports/ (tylko na admin)
 
 ---
 
-## 🔧 Rozwiązywanie problemów
+## Rozwiązywanie problemów
 
 ### Problem: "Configuration file not found"
 
@@ -1042,14 +1042,3 @@ groups
 
 **Uwaga:** Plik `/var/log/auth.log` zawiera wrażliwe informacje bezpieczeństwa i wymaga uprawnień grupy `adm`.
 
----
-
-## 📝 Autor
-
-Projekt stworzony w ramach kursu **Systemy Operacyjne**.
-
----
-
-## 📄 Licencja
-
-Projekt edukacyjny - wolne użycie w celach akademickich.
