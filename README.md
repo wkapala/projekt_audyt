@@ -96,29 +96,28 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
 ```
 
 ### Struktura sieci (dla automatycznego raportowania)
-- 3 maszyny wirtualne Linux (klienty)
-- 1 host centralny do zbierania raportów
+- 2 maszyny wirtualne Linux (klienty)
+- 1 host centralny (admin) do zbierania raportów
 - Skonfigurowane klucze SSH dla bezhasłowego dostępu
 
 ---
 
 ## Quick Start
 
-Szybki przewodnik uruchomienia projektu na 3 maszynach wirtualnych Ubuntu Server.
+Szybki przewodnik uruchomienia projektu na maszynach wirtualnych Ubuntu Server.
 
 ### Przed rozpoczęciem
 
 **Potrzebujesz:**
-- 3 maszyny wirtualne z Ubuntu Server (np. UTM/QEMU)
-- 1 host centralny do zbierania raportów
+- 2 maszyny wirtualne z Ubuntu Server (klienty)
+- 1 host centralny (admin) do zbierania raportów
 - Sieć łącząca wszystkie maszyny
 
 **Przykładowa konfiguracja:**
 ```
-Central Host:  192.168.64.3 (user: audit)
-VM1:           192.168.64.4
-VM2:           192.168.64.5
-VM3:           192.168.64.6
+Admin (Central):  192.168.64.3 (user: audit)
+Client 1:         192.168.64.4
+Client 2:         192.168.64.5
 ```
 
 ---
@@ -149,7 +148,7 @@ sudo usermod -aG adm audit
 
 ---
 
-### Krok 2: Instalacja na VM1, VM2, VM3
+### Krok 2: Instalacja na Client 1, Client 2
 
 Na każdej maszynie wirtualnej wykonaj:
 
@@ -315,27 +314,21 @@ watch -n 60 'ls -lth /opt/sysaudit/central_reports/ | head -10'
 
 ### Harmonogram (przykład)
 
-**Sugerowana konfiguracja dla 3 VM:**
+**Sugerowana konfiguracja dla 2 klientów:**
 
-- **VM1**: Raporty co 6 godzin (0:00, 6:00, 12:00, 18:00)
-- **VM2**: Raporty co 6 godzin (1:00, 7:00, 13:00, 19:00)
-- **VM3**: Raporty co 6 godzin (2:00, 8:00, 14:00, 20:00)
+- **Client 1**: Raporty co 6 godzin (0:00, 6:00, 12:00, 18:00)
+- **Client 2**: Raporty co 6 godzin (1:00, 7:00, 13:00, 19:00)
 
 Dzięki rozłożeniu w czasie unikniesz jednoczesnego obciążenia sieci.
 
-**Cron dla VM1:**
+**Cron dla Client 1:**
 ```
 0 */6 * * * /opt/sysaudit/send_report.sh
 ```
 
-**Cron dla VM2:**
+**Cron dla Client 2:**
 ```
 0 1,7,13,19 * * * /opt/sysaudit/send_report.sh
-```
-
-**Cron dla VM3:**
-```
-0 2,8,14,20 * * * /opt/sysaudit/send_report.sh
 ```
 
 ---
@@ -405,7 +398,7 @@ Twój system audytu jest teraz w pełni skonfigurowany i działa automatycznie.
    - Nie musisz tworzyć go ręcznie
 
 4. **Przygotuj SSH dla klientów**
-   - Na każdej maszynie klienckiej (VM1, VM2, VM3):
+   - Na każdej maszynie klienckiej (Client 1, Client 2):
    ```bash
    ssh-keygen -t ed25519 -C "sysaudit@$(hostname)"
    ssh-copy-id audit@192.168.64.3
@@ -651,22 +644,22 @@ projekt_audyt/
 
 ```
 ┌──────────────────────────────────────────────────┐
-│              Central Host (192.168.64.3)         │
-│  - Zbiera raporty od wszystkich VM               │
+│         Admin (Central) - 192.168.64.3           │
+│  - Zbiera raporty od klientów                    │
 │  - Katalog: /opt/sysaudit/central_reports        │
 │  - User: audit (SSH key authentication)          │
 └────────────────────┬─────────────────────────────┘
                      │
-        ┌────────────┴────────────┬────────────┐
-        │                         │            │
-┌───────▼────────┐   ┌────────────▼──┐   ┌────▼─────────┐
-│  VM1           │   │  VM2           │   │  VM3         │
-│ (192.168.64.4) │   │ (192.168.64.5) │   │ (...)        │
-│                │   │                │   │              │
-│ - audyt_main   │   │ - audyt_main   │   │ - audyt_main │
-│ - cron/systemd │   │ - cron/systemd │   │ - cron/systemd│
-│ - send_report  │   │ - send_report  │   │ - send_report│
-└────────────────┘   └────────────────┘   └──────────────┘
+        ┌────────────┴────────────┐
+        │                         │
+┌───────▼────────┐   ┌────────────▼──┐
+│  Client 1      │   │  Client 2      │
+│ (192.168.64.4) │   │ (192.168.64.5) │
+│                │   │                │
+│ - audyt_main   │   │ - audyt_main   │
+│ - cron/systemd │   │ - cron/systemd │
+│ - send_report  │   │ - send_report  │
+└────────────────┘   └────────────────┘
 ```
 
 ---
