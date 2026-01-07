@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Załaduj konfigurację
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/config.conf"
 
@@ -12,12 +11,10 @@ fi
 
 source "$CONFIG_FILE"
 
-# Przygotowanie nazw plików
 HOSTNAME=$(hostname)
 TS=$(date '+%Y%m%d_%H%M%S')
 LOCAL_REPORT="${REPORT_DIR}/${HOSTNAME}_${TS}.txt"
 
-# Sprawdź czy katalog raportów istnieje
 if [[ ! -d "$REPORT_DIR" ]]; then
     echo "Creating reports directory: $REPORT_DIR"
     mkdir -p "$REPORT_DIR" || {
@@ -26,7 +23,6 @@ if [[ ! -d "$REPORT_DIR" ]]; then
     }
 fi
 
-# 1. Pełny audyt na lokalnym hoście
 echo "Running full system audit..."
 "${SCRIPT_DIR}/audyt_main.sh" --full > "$LOCAL_REPORT" 2>&1
 
@@ -36,11 +32,8 @@ if [[ ! -f "$LOCAL_REPORT" ]]; then
 fi
 
 echo "Report generated: $LOCAL_REPORT"
-
-# 2. Wysłanie raportu na host centralny
 echo "Sending report to central host: ${CENTRAL_USER}@${CENTRAL_HOST}"
 
-# Funkcja wysyłania z retry mechanism
 send_report() {
     local attempt=1
     local max_attempts="$SCP_RETRY_COUNT"
@@ -48,15 +41,12 @@ send_report() {
     while [ $attempt -le $max_attempts ]; do
         echo "Attempt $attempt/$max_attempts..."
 
-        # Sprawdź połączenie SSH przed wysłaniem
         if timeout "$SSH_TIMEOUT" ssh -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes \
             "${CENTRAL_USER}@${CENTRAL_HOST}" "exit" 2>/dev/null; then
 
-            # Upewnij się że katalog central_reports istnieje na remote (automatycznie utworzy jeśli nie ma)
             ssh -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes \
                 "${CENTRAL_USER}@${CENTRAL_HOST}" "mkdir -p ${CENTRAL_DIR}" 2>/dev/null || true
 
-            # Połączenie działa, wysyłaj raport
             if scp -o ConnectTimeout="$SSH_TIMEOUT" "$LOCAL_REPORT" \
                 "${CENTRAL_USER}@${CENTRAL_HOST}:${CENTRAL_DIR}/" 2>/dev/null; then
                 echo "Report sent successfully!"
@@ -79,7 +69,6 @@ send_report() {
     return 1
 }
 
-# Próba wysłania
 if send_report; then
     echo "SUCCESS: Report delivered to central host"
     exit 0

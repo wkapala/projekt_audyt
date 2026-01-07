@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Załaduj bibliotekę (która automatycznie załaduje config.conf)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_FILE="${SCRIPT_DIR}/../audyt_lib.sh"
 
@@ -11,12 +10,10 @@ fi
 
 source "$LIB_FILE"
 
-# Walidacja wymaganych narzędzi
 check_required_tools grep awk || exit 1
 
 echo "------------------[ MEMORY AUDIT ]--------------------"
 
-# Sprawdź dostęp do /proc/meminfo
 if ! check_proc_access "/proc/meminfo"; then
     echo "ERROR: Cannot access /proc/meminfo"
     exit 1

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Załaduj bibliotekę (która automatycznie załaduje config.conf)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_FILE="${SCRIPT_DIR}/../audyt_lib.sh"
 
@@ -11,7 +10,6 @@ fi
 
 source "$LIB_FILE"
 
-# Walidacja wymaganych narzędzi
 check_required_tools ip ss ping awk || exit 1
 
 echo "------------------[ NETWORK AUDIT ]-------------------"

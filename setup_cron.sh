@@ -5,7 +5,6 @@
 
 set -euo pipefail
 
-# Kolory
 GREEN="\e[32m"
 YELLOW="\e[33m"
 CYAN="\e[36m"
@@ -24,7 +23,6 @@ print_warning() {
     echo -e "${YELLOW}${BOLD}⚠${RESET} $*"
 }
 
-# Wykryj lokalizację instalacji
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "$SCRIPT_DIR" == *"/opt/sysaudit"* ]]; then
@@ -35,7 +33,6 @@ fi
 
 SEND_REPORT_SCRIPT="${INSTALL_DIR}/send_report.sh"
 
-# Sprawdź czy skrypt send_report istnieje
 if [[ ! -f "$SEND_REPORT_SCRIPT" ]]; then
     echo "ERROR: send_report.sh not found at: $SEND_REPORT_SCRIPT"
     exit 1
@@ -52,7 +49,6 @@ echo ""
 echo "Script location: $SEND_REPORT_SCRIPT"
 echo ""
 
-# Menu wyboru częstotliwości
 echo "Select audit frequency:"
 echo ""
 echo "  1) Every 6 hours"
@@ -128,14 +124,11 @@ if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-# Dodaj do crona
 CRON_LINE="$CRON_EXPR $SEND_REPORT_SCRIPT > /dev/null 2>&1"
 
-# Pobierz obecny crontab
 TEMP_CRON=$(mktemp)
 crontab -l 2>/dev/null > "$TEMP_CRON" || true
 
-# Sprawdź czy już istnieje podobny wpis
 if grep -qF "$SEND_REPORT_SCRIPT" "$TEMP_CRON" 2>/dev/null; then
     print_warning "Found existing cron job for this script"
     echo ""
@@ -154,11 +147,9 @@ if grep -qF "$SEND_REPORT_SCRIPT" "$TEMP_CRON" 2>/dev/null; then
     fi
 fi
 
-# Dodaj nowy wpis
 echo "# System Audit - Automatic reporting ($CRON_DESC)" >> "$TEMP_CRON"
 echo "$CRON_LINE" >> "$TEMP_CRON"
 
-# Zainstaluj nowy crontab
 if crontab "$TEMP_CRON"; then
     print_success "Cron job installed successfully!"
     echo ""
