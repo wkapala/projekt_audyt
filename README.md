@@ -57,6 +57,8 @@ Zamiast pisać w C, wykorzystujemy natywny język systemu operacyjnego (Bash) do
    - Konfiguracja interfejsów sieciowych (IPv4)
    - Nasłuchujące porty TCP/UDP
    - Testy łączności (auto-detekcja admin/client)
+     - **Admin mode**: Wykrywa klientów z ARP cache (gdy katalog `central_reports` istnieje lokalnie)
+     - **Client mode**: Testuje połączenie do `CENTRAL_HOST` przez ping
 
 5. **Bezpieczeństwo (`--sec`, `-s`)**
    - Obecnie zalogowani użytkownicy
@@ -396,6 +398,9 @@ Twój system audytu jest teraz w pełni skonfigurowany i działa automatycznie.
 3. **Katalog central_reports**
    - Tworzony **automatycznie** przez `send_report.sh` przy pierwszym raporcie
    - Nie musisz tworzyć go ręcznie
+   - **Ważne**: Obecność tego katalogu służy do auto-detekcji trybu admin/client w module sieciowym
+     - Jeśli katalog istnieje lokalnie → tryb admin (pokazuje klientów z ARP cache)
+     - Jeśli katalog nie istnieje → tryb client (testuje ping do CENTRAL_HOST)
 
 4. **Przygotuj SSH dla klientów**
    - Na każdej maszynie klienckiej (Client 1, Client 2):
@@ -673,6 +678,27 @@ Szybka ściągawka z najważniejszymi komendami.
 **1. POMOC**
 ```bash
 /opt/sysaudit/audyt_main.sh --help
+```
+Output:
+```
+Usage: audyt_main.sh [OPTION]
+
+System Audit - Modular system resource auditing tool
+
+OPTIONS:
+    --full, -f          Run full audit (all modules)
+    --cpu,  -c          CPU audit only
+    --mem,  -m          Memory audit only
+    --disk, -d          Disk audit only
+    --net,  -n          Network audit only
+    --sec,  -s          Security audit only
+    --help, -h          Show this help message
+
+EXAMPLES:
+    audyt_main.sh              # Interactive menu
+    audyt_main.sh --full       # Full audit
+    audyt_main.sh --cpu        # CPU audit only
+    audyt_main.sh -m -d        # Memory and disk audit
 ```
 
 **2. MENU INTERAKTYWNE**
