@@ -9,12 +9,14 @@
 - [O projekcie](#o-projekcie)
 - [Funkcjonalności](#funkcjonalności)
 - [Wymagania systemowe](#wymagania-systemowe)
-- [Instalacja](#instalacja)
+- [Quick Start](#quick-start)
+- [Instalacja szczegółowa](#instalacja-szczegółowa)
 - [Użycie](#użycie)
 - [Konfiguracja](#konfiguracja)
 - [Automatyzacja](#automatyzacja)
 - [Architektura](#architektura)
-- [Przykłady](#przykłady)
+- [Demo Commands](#demo-commands)
+- [Rozwiązywanie problemów](#rozwiązywanie-problemów)
 
 ---
 
@@ -54,7 +56,7 @@ Zamiast pisać w C, wykorzystujemy natywny język systemu operacyjnego (Bash) do
 4. **Sieć (`--net`, `-n`)**
    - Konfiguracja interfejsów sieciowych (IPv4)
    - Nasłuchujące porty TCP/UDP
-   - Testy łączności do określonych hostów
+   - Testy łączności (auto-detekcja admin/client)
 
 5. **Bezpieczeństwo (`--sec`, `-s`)**
    - Obecnie zalogowani użytkownicy
@@ -100,7 +102,259 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
 
 ---
 
-## 🚀 Instalacja
+## 🚀 Quick Start
+
+Szybki przewodnik uruchomienia projektu na 3 maszynach wirtualnych Ubuntu Server.
+
+### 📋 Przed rozpoczęciem
+
+**Potrzebujesz:**
+- 3 maszyny wirtualne z Ubuntu Server (np. UTM/QEMU)
+- 1 host centralny do zbierania raportów
+- Sieć łącząca wszystkie maszyny
+
+**Przykładowa konfiguracja:**
+```
+Central Host:  192.168.64.3 (user: audit)
+VM1:           192.168.64.4
+VM2:           192.168.64.5
+VM3:           192.168.64.6
+```
+
+---
+
+### Krok 1: Przygotowanie Central Host (192.168.64.3)
+
+Na hoście centralnym:
+
+```bash
+# 1. Sklonuj projekt
+cd ~
+git clone <repository-url> projekt_audyt
+cd projekt_audyt
+
+# 2. Uruchom instalator
+sudo ./install.sh
+# Wybierz opcję 1 (production - /opt/sysaudit)
+
+# 3. Utwórz użytkownika audit (jeśli nie istnieje)
+sudo useradd -m -s /bin/bash audit
+sudo passwd audit
+
+# 4. Dodaj użytkownika do grupy adm (dostęp do logów)
+sudo usermod -aG adm audit
+```
+
+**ℹ️ Katalog `central_reports` zostanie utworzony automatycznie przy pierwszym wysłaniu raportu przez klienta.**
+
+---
+
+### Krok 2: Instalacja na VM1, VM2, VM3
+
+Na każdej maszynie wirtualnej wykonaj:
+
+```bash
+# 1. Sklonuj projekt
+cd ~
+git clone <repository-url> projekt_audyt
+cd projekt_audyt
+
+# 2. Uruchom instalator
+sudo ./install.sh
+
+# 3. Wybierz opcję 1 (production)
+# Instalator:
+# - Sprawdzi zależności
+# - Stworzy katalogi
+# - Skopiuje pliki do /opt/sysaudit
+```
+
+---
+
+### Krok 3: Konfiguracja SSH keys
+
+**Na każdej VM (klient):**
+
+Instalator pokaże instrukcję SSH. Wykonaj następujące kroki:
+
+```bash
+# 1. Wygeneruj klucz SSH
+ssh-keygen -t ed25519 -C "sysaudit@$(hostname)"
+# Naciśnij Enter 3 razy (domyślna lokalizacja, bez hasła)
+
+# 2. Skopiuj klucz na central host (zaktualizuj IP)
+ssh-copy-id audit@192.168.64.3
+
+# 3. Test połączenia
+ssh audit@192.168.64.3 'echo SUCCESS'
+```
+
+---
+
+### Krok 4: Edycja config.conf
+
+Na każdej VM edytuj `/opt/sysaudit/config.conf`:
+
+```bash
+sudo nano /opt/sysaudit/config.conf
+```
+
+**Zaktualizuj adres central host:**
+```bash
+# Konfiguracja centralnego hosta (wysyłanie raportów)
+# Connectivity test automatycznie wykrywa:
+#  - Admin: pokazuje klientów z ARP cache (którzy wysłali raporty)
+#  - Klient: testuje połączenie do CENTRAL_HOST
+CENTRAL_HOST="192.168.64.3"    # <-- Twój central host
+CENTRAL_USER="audit"
+CENTRAL_DIR="/opt/sysaudit/central_reports"
+```
+
+Zapisz: `Ctrl+O`, `Enter`, `Ctrl+X`
+
+---
+
+### Krok 5: Test manualny
+
+```bash
+# Test pojedynczego modułu
+/opt/sysaudit/audyt_main.sh --cpu
+
+# Test pełnego audytu
+/opt/sysaudit/audyt_main.sh --full
+
+# Test wysyłania raportu
+sudo /opt/sysaudit/send_report.sh
+```
+
+**Sprawdź czy raport dotarł:**
+```bash
+# Na central host
+ssh audit@192.168.64.3
+ls -lh /opt/sysaudit/central_reports/
+```
+
+---
+
+### Krok 6: Automatyzacja (wybierz jedną opcję)
+
+#### Opcja A: Cron (prostsze)
+
+```bash
+/opt/sysaudit/setup_cron.sh
+
+# W menu wybierz:
+# 1) Every 6 hours
+# lub
+# 3) Daily at 2:00 AM
+```
+
+#### Opcja B: Systemd (nowocześniejsze)
+
+```bash
+sudo /opt/sysaudit/setup_systemd.sh
+
+# W menu wybierz:
+# 1) Install timer
+```
+
+---
+
+### ✅ Weryfikacja
+
+#### Sprawdź logi
+
+```bash
+# Logi audytu
+sudo tail -f /opt/sysaudit/logs/audyt.log
+
+# Logi systemd (jeśli używasz)
+sudo journalctl -u sysaudit.service -f
+```
+
+#### Sprawdź raporty lokalne
+
+```bash
+ls -lh /opt/sysaudit/reports/
+```
+
+#### Sprawdź czy cron działa
+
+```bash
+crontab -l
+```
+
+#### Sprawdź timer systemd
+
+```bash
+sudo systemctl status sysaudit.timer
+sudo systemctl list-timers sysaudit.timer
+```
+
+---
+
+### 📊 Podgląd raportów na Central Host
+
+Na hoście centralnym (192.168.64.3):
+
+```bash
+# Zaloguj jako audit
+ssh audit@192.168.64.3
+
+# Zobacz wszystkie raporty
+ls -lh /opt/sysaudit/central_reports/
+
+# Wyświetl najnowszy raport
+cat /opt/sysaudit/central_reports/$(ls -t /opt/sysaudit/central_reports/ | head -1)
+
+# Monitoruj na żywo
+watch -n 60 'ls -lth /opt/sysaudit/central_reports/ | head -10'
+```
+
+---
+
+### 📅 Harmonogram (przykład)
+
+**Sugerowana konfiguracja dla 3 VM:**
+
+- **VM1**: Raporty co 6 godzin (0:00, 6:00, 12:00, 18:00)
+- **VM2**: Raporty co 6 godzin (1:00, 7:00, 13:00, 19:00)
+- **VM3**: Raporty co 6 godzin (2:00, 8:00, 14:00, 20:00)
+
+Dzięki rozłożeniu w czasie unikniesz jednoczesnego obciążenia sieci.
+
+**Cron dla VM1:**
+```
+0 */6 * * * /opt/sysaudit/send_report.sh
+```
+
+**Cron dla VM2:**
+```
+0 1,7,13,19 * * * /opt/sysaudit/send_report.sh
+```
+
+**Cron dla VM3:**
+```
+0 2,8,14,20 * * * /opt/sysaudit/send_report.sh
+```
+
+---
+
+### ✨ Gotowe!
+
+Twój system audytu jest teraz w pełni skonfigurowany i działa automatycznie.
+
+**Co się dzieje teraz:**
+1. Każda VM wykonuje audyt w zaplanowanych godzinach
+2. Raporty są zapisywane lokalnie w `reports/`
+3. Raporty są wysyłane na central host przez SCP
+4. Wszystkie operacje są logowane w `logs/audyt.log`
+
+**Sprawdź za 6 godzin czy raporty pojawiają się na central host!**
+
+---
+
+## 📖 Instalacja szczegółowa
 
 ### Instalacja automatyczna
 
@@ -121,8 +375,8 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
    - Opcja 2: Bieżący katalog (development)
 
 4. **Skonfiguruj SSH** (opcjonalne)
-   - Instalator pomoże wygenerować klucz SSH
-   - Następnie uruchom: `ssh-copy-id audit@192.168.64.3`
+   - Instalator wyświetli instrukcje 3-etapowego setupu SSH
+   - Zobacz [Krok 3: Konfiguracja SSH keys](#krok-3-konfiguracja-ssh-keys) w Quick Start
 
 ### Konfiguracja hosta centralnego
 
@@ -136,22 +390,19 @@ sudo apt-get install coreutils procps iproute2 iputils-ping openssh-client
    # Wybierz opcję 1 (/opt/sysaudit)
    ```
 
-2. **Utwórz katalog do zbierania raportów**
-   ```bash
-   sudo mkdir -p /opt/sysaudit/central_reports
-   sudo chown audit:audit /opt/sysaudit/central_reports
-   chmod 755 /opt/sysaudit/central_reports
-   ```
-
-3. **Skonfiguruj użytkownika 'audit'** (jeśli nie istnieje)
+2. **Skonfiguruj użytkownika 'audit'** (jeśli nie istnieje)
    ```bash
    # Utwórz użytkownika
    sudo useradd -m -s /bin/bash audit
    sudo passwd audit
 
    # Dodaj do grupy 'adm' (dostęp do logów systemowych)
-   sudo usermod -a -G adm audit
+   sudo usermod -aG adm audit
    ```
+
+3. **Katalog central_reports**
+   - Tworzony **automatycznie** przez `send_report.sh` przy pierwszym raporcie
+   - Nie musisz tworzyć go ręcznie
 
 4. **Przygotuj SSH dla klientów**
    - Na każdej maszynie klienckiej (VM1, VM2, VM3):
@@ -252,8 +503,10 @@ MODULE_DIR="${INSTALL_DIR}/modules"
 LOG_DIR="${INSTALL_DIR}/logs"
 REPORT_DIR="${INSTALL_DIR}/reports"
 
-# Konfiguracja sieci
-PING_TARGETS=("192.168.64.3" "192.168.64.4" "192.168.64.5")
+# Konfiguracja centralnego hosta (wysyłanie raportów)
+# Connectivity test automatycznie wykrywa:
+#  - Admin: pokazuje klientów z ARP cache (którzy wysłali raporty)
+#  - Klient: testuje połączenie do CENTRAL_HOST
 CENTRAL_HOST="192.168.64.3"
 CENTRAL_USER="audit"
 CENTRAL_DIR="/opt/sysaudit/central_reports"
@@ -261,6 +514,7 @@ CENTRAL_DIR="/opt/sysaudit/central_reports"
 # Timeouty
 SSH_TIMEOUT=10
 PING_TIMEOUT=1
+PING_COUNT=3
 
 # Retry dla SCP
 SCP_RETRY_COUNT=3
@@ -273,19 +527,14 @@ DISK_WARNING_THRESHOLD=90   # procent
 
 ### Personalizacja
 
-1. **Zmiana hostów do testowania**
-   ```bash
-   PING_TARGETS=("10.0.0.1" "10.0.0.2" "google.com")
-   ```
-
-2. **Zmiana hosta centralnego**
+1. **Zmiana hosta centralnego**
    ```bash
    CENTRAL_HOST="10.0.1.100"
    CENTRAL_USER="sysadmin"
    CENTRAL_DIR="/var/reports/sysaudit"
    ```
 
-3. **Dostosowanie progów alarmowych**
+2. **Dostosowanie progów alarmowych**
    ```bash
    MEM_WARNING_THRESHOLD=80    # alarm przy 80% RAM
    DISK_WARNING_THRESHOLD=85   # alarm przy 85% dysku
@@ -422,81 +671,303 @@ projekt_audyt/
 
 ---
 
-## 📊 Przykłady
+## 🎬 Demo Commands
 
-### Przykład 1: Audyt CPU
+Szybka ściągawka z najważniejszymi komendami.
 
+### === PODSTAWOWE KOMENDY ===
+
+**1. POMOC**
 ```bash
-$ ./audyt_main.sh --cpu
-
-==========================================
-          SYSTEM AUDIT REPORT
-  Host:      ubuntu-vm-01
-  Generated: 2025-01-04 14:30:00
-==========================================
-
---------------------[ CPU AUDIT ]---------------------
-Load average:
-  1 min : 0.45
-  5 min : 0.52
- 15 min : 0.48
-
-CPU model:
-  Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
-
-Top 5 processes by CPU usage:
-  PID COMMAND         %CPU
-  1234 firefox         15.2
-  5678 python3         8.1
-  9012 node            3.4
-  ...
+/opt/sysaudit/audyt_main.sh --help
 ```
 
-### Przykład 2: Audyt pamięci z ostrzeżeniem
-
+**2. MENU INTERAKTYWNE**
 ```bash
-$ ./audyt_main.sh --mem
-
-------------------[ MEMORY AUDIT ]--------------------
-Total RAM:      16384 MB
-Available RAM:  1024 MB
-Used RAM:       15360 MB (93%)
-
-WARNING: Memory usage above 90%!
-
-Swap total:     8192 MB
-Swap free:      7890 MB
+/opt/sysaudit/audyt_main.sh
 ```
 
-### Przykład 3: Wiele modułów
-
+**3. POJEDYNCZY MODUŁ**
 ```bash
-$ ./audyt_main.sh -c -m -d
-
-# Wyświetli kolejno: CPU, Memory, Disk
+/opt/sysaudit/audyt_main.sh --cpu
+/opt/sysaudit/audyt_main.sh --mem
+/opt/sysaudit/audyt_main.sh --disk
+/opt/sysaudit/audyt_main.sh --net
+/opt/sysaudit/audyt_main.sh --sec
 ```
 
-### Przykład 4: Wysłanie raportu
-
+**4. WIELE MODUŁÓW**
 ```bash
-$ ./send_report.sh
-
-Running full system audit...
-Report generated: /opt/sysaudit/reports/ubuntu-vm-01_20250104_143000.txt
-Sending report to central host: audit@192.168.64.3
-Attempt 1/3...
-Report sent successfully!
-SUCCESS: Report delivered to central host
+/opt/sysaudit/audyt_main.sh -c -m -d
 ```
 
-### Przykład 5: Plik logu
-
+**5. PEŁNY AUDYT**
 ```bash
-$ cat /opt/sysaudit/logs/audyt.log
+/opt/sysaudit/audyt_main.sh --full
+/opt/sysaudit/audyt_main.sh -f
+```
 
-[2025-01-04 14:30:15] [admin@ubuntu-vm-01] [CPU] -> Raport CPU wygenerowany poprawnie.
-[2025-01-04 14:30:16] [admin@ubuntu-vm-01] [MEM] -> Raport pamięci RAM wygenerowany poprawnie.
-[2025-01-04 14:30:17] [admin@ubuntu-vm-01] [DISK] -> Raport dyskowy wygenerowany poprawnie.
+---
+
+### === RAPORTOWANIE ===
+
+**6. WYŚLIJ RAPORT NA CENTRAL HOST**
+```bash
+/opt/sysaudit/send_report.sh
+```
+
+**7. ZOBACZ LOKALNE RAPORTY**
+```bash
+ls -lh /opt/sysaudit/reports/
+cat /opt/sysaudit/reports/$(hostname)_*.txt | head -50
+```
+
+**8. ZOBACZ RAPORTY NA ADMIN (tylko na 192.168.64.3)**
+```bash
+ls -lh /opt/sysaudit/central_reports/
+cat /opt/sysaudit/central_reports/vm-client1_*.txt | head -100
+```
+
+---
+
+### === LOGI I MONITORING ===
+
+**9. ZOBACZ LOGI**
+```bash
+tail -20 /opt/sysaudit/logs/audyt.log
+tail -f /opt/sysaudit/logs/audyt.log
+```
+
+**10. FILTRUJ LOGI PER MODUŁ**
+```bash
+grep "CPU" /opt/sysaudit/logs/audyt.log | tail -5
+grep "MEM" /opt/sysaudit/logs/audyt.log | tail -5
+grep "SEC" /opt/sysaudit/logs/audyt.log | tail -5
+```
+
+---
+
+### === KONFIGURACJA ===
+
+**11. POKAŻ CONFIG**
+```bash
+cat /opt/sysaudit/config.conf
+```
+
+**12. SPRAWDŹ UPRAWNIENIA**
+```bash
+ls -ld /opt/sysaudit/logs /opt/sysaudit/reports
+```
+
+**13. SPRAWDŹ STRUKTURĘ**
+```bash
+tree /opt/sysaudit -L 2
+# lub
+ls -lR /opt/sysaudit/
+```
+
+---
+
+### === AUTOMATYZACJA ===
+
+**14. POKAŻ CRON**
+```bash
+crontab -l
+```
+
+**15. EDYTUJ CRON**
+```bash
+crontab -e
+```
+
+**16. SPRAWDŹ STATUS SYSTEMD (jeśli używasz)**
+```bash
+systemctl status sysaudit.timer
+systemctl list-timers sysaudit.timer
+```
+
+---
+
+### === SSH I SIEĆ ===
+
+**17. TEST SSH DO ADMIN**
+```bash
+ssh audit@192.168.64.3 'echo SUCCESS from $(hostname)'
+```
+
+**18. TEST ŁĄCZNOŚCI**
+```bash
+ping -c3 192.168.64.3
+```
+
+**19. SPRAWDŹ KLUCZE SSH**
+```bash
+ls -la ~/.ssh/id_*
+```
+
+---
+
+### === TESTY FUNKCJONALNOŚCI ===
+
+**20. TEST CPU NA ARM**
+```bash
+/opt/sysaudit/audyt_main.sh --cpu | grep -A 3 "CPU model"
+# Powinno pokazać: Architecture: aarch64
+```
+
+**21. TEST PROGÓW ALARMOWYCH**
+```bash
+/opt/sysaudit/audyt_main.sh --mem
+# Sprawdź czy pokazuje WARNING gdy > 90%
+```
+
+**22. TEST RETRY MECHANISM**
+```bash
+# Wyłącz Admin VM i:
+/opt/sysaudit/send_report.sh
+# Powinno próbować 3 razy z 5s opóźnieniem
+```
+
+**23. TEST AUTH.LOG**
+```bash
+/opt/sysaudit/audyt_main.sh --sec
+# Sprawdź czy pokazuje failed logins lub komunikat o grupie adm
+```
+
+---
+
+### === DEBUGGING ===
+
+**24. SPRAWDŹ CZY MODUŁY SĄ EXECUTABLE**
+```bash
+ls -l /opt/sysaudit/modules/*.sh
+```
+
+**25. SPRAWDŹ CZY GŁÓWNE SKRYPTY SĄ EXECUTABLE**
+```bash
+ls -l /opt/sysaudit/*.sh
+```
+
+**26. SPRAWDŹ GRUPĘ ADM**
+```bash
+groups
+# Powinno zawierać 'adm'
+```
+
+**27. MANUAL TEST MODUŁU**
+```bash
+bash /opt/sysaudit/modules/mod_cpu.sh
+```
+
+---
+
+### === INSTALACJA (dla przypomnienia) ===
+
+**28. ŚWIEŻA INSTALACJA**
+```bash
+cd ~/projekt_audyt
+git pull origin main
+sudo ./install.sh
+```
+
+**29. USUŃ INSTALACJĘ**
+```bash
+sudo rm -rf /opt/sysaudit
+crontab -r
+```
+
+**30. SETUP SSH**
+```bash
+ssh-keygen -t ed25519 -C "sysaudit@$(hostname)"
+ssh-copy-id audit@192.168.64.3
+```
+
+---
+
+### === STATYSTYKI (dla Admin) ===
+
+**31. LICZBA RAPORTÓW**
+```bash
+ls -1 /opt/sysaudit/central_reports/ | wc -l
+```
+
+**32. RAPORTY PER KLIENT**
+```bash
+ls -1 /opt/sysaudit/central_reports/ | grep client1 | wc -l
+ls -1 /opt/sysaudit/central_reports/ | grep client2 | wc -l
+```
+
+**33. ROZMIAR RAPORTÓW**
+```bash
+du -sh /opt/sysaudit/central_reports/
+```
+
+**34. NAJNOWSZE RAPORTY**
+```bash
+ls -lth /opt/sysaudit/central_reports/ | head -10
+```
+
+**35. NAJSTARSZE RAPORTY**
+```bash
+ls -lt /opt/sysaudit/central_reports/ | tail -10
+```
+
+---
+
+### === DEMO SCENARIUSZE ===
+
+**SCENARIUSZ 1: Podstawowe funkcje (Client VM)**
+```bash
+/opt/sysaudit/audyt_main.sh --help
+/opt/sysaudit/audyt_main.sh --cpu
+/opt/sysaudit/audyt_main.sh --full
+```
+
+**SCENARIUSZ 2: Wysyłanie raportów (Client → Admin)**
+```bash
+# Na Client:
+/opt/sysaudit/send_report.sh
+# Na Admin:
+ls -lh /opt/sysaudit/central_reports/
+cat /opt/sysaudit/central_reports/vm-client1_*.txt
+```
+
+**SCENARIUSZ 3: Automatyzacja**
+```bash
+crontab -l
+tail -20 /opt/sysaudit/logs/audyt.log
+```
+
+**SCENARIUSZ 4: Konfiguracja**
+```bash
+cat /opt/sysaudit/config.conf
+# Pokaż: progi, retry, timeouty
+```
+
+---
+
+### === QUICK TIPS ===
+
+- CPU na ARM musi pokazywać: "Architecture: aarch64"
+- Logi muszą mieć uprawnienia: audit:audit (NIE root:root!)
+- SSH musi działać bezhasłowo: `ssh audit@192.168.64.3 'echo TEST'`
+- Cron: `0 */6 * * *` = co 6 godzin
+- Retry: 3 próby z 5s opóźnieniem
+- Grupa adm: dostęp do /var/log/auth.log
+- Connectivity test: auto-detekcja admin/client przez ARP cache
+
+---
+
+### === PRZYKŁADOWA KONFIGURACJA SIECI ===
+
+```
+Admin (Central):  192.168.64.3
+Client 1:         192.168.64.4
+Client 2:         192.168.64.5
+
+Użytkownik:       audit
+Katalog:          /opt/sysaudit
+Central reports:  /opt/sysaudit/central_reports/ (tylko na admin)
 ```
 
 ---
@@ -560,7 +1031,7 @@ sudo apt-get install procps iproute2 iputils-ping
 **Rozwiązanie:**
 ```bash
 # Dodaj użytkownika do grupy 'adm' (dostęp do logów systemowych)
-sudo usermod -a -G adm $USER
+sudo usermod -aG adm $USER
 
 # Wyloguj się i zaloguj ponownie (lub użyj newgrp)
 newgrp adm
@@ -582,4 +1053,3 @@ Projekt stworzony w ramach kursu **Systemy Operacyjne**.
 ## 📄 Licencja
 
 Projekt edukacyjny - wolne użycie w celach akademickich.
-# projekt_audyt
