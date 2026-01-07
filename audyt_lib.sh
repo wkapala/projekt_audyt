@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
+# Załaduj konfigurację
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/config.conf"
 
@@ -11,13 +12,16 @@ fi
 
 source "$CONFIG_FILE"
 
+# Bezpieczne ustalenie użytkownika (działa też w cronie)
 AUDIT_USER="${USER:-$(whoami 2>/dev/null || echo unknown)}"
 
+# Funkcja logowania
 log_msg() {
     local module="$1"
     shift
     local msg="$*"
 
+    # Sprawdź czy katalog logów istnieje
     if [[ ! -d "$LOG_DIR" ]]; then
         mkdir -p "$LOG_DIR" 2>/dev/null || {
             echo "WARNING: Cannot create log directory: $LOG_DIR" >&2
@@ -29,6 +33,7 @@ log_msg() {
         "$(date '+%F %T')" "$AUDIT_USER" "$(hostname)" "$module" "$msg" >> "$LOGFILE"
 }
 
+# Funkcja sprawdzania wymaganych narzędzi
 check_required_tools() {
     local missing_tools=()
     local tools=("$@")
@@ -51,6 +56,7 @@ check_required_tools() {
     return 0
 }
 
+# Funkcja sprawdzania dostępu do plików /proc
 check_proc_access() {
     local proc_file="$1"
 

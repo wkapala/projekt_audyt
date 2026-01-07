@@ -5,6 +5,7 @@
 
 set -euo pipefail
 
+# Kolory
 RED="\e[31m"
 GREEN="\e[32m"
 YELLOW="\e[33m"
@@ -12,6 +13,7 @@ CYAN="\e[36m"
 BOLD="\e[1m"
 RESET="\e[0m"
 
+# Funkcje pomocnicze
 print_step() {
     echo -e "${CYAN}${BOLD}==>${RESET} ${BOLD}$*${RESET}"
 }
@@ -28,6 +30,7 @@ print_error() {
     echo -e "${RED}${BOLD}✗${RESET} $*" >&2
 }
 
+# Sprawdź czy skrypt uruchomiony jako root (opcjonalne dla /opt)
 check_root() {
     if [[ "$INSTALL_TARGET" == "/opt/sysaudit" ]] && [[ $EUID -ne 0 ]]; then
         print_error "Installation to /opt/sysaudit requires root privileges"
@@ -36,6 +39,7 @@ check_root() {
     fi
 }
 
+# Wykryj system operacyjny
 detect_os() {
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
@@ -47,6 +51,7 @@ detect_os() {
     fi
 }
 
+# Sprawdź wymagane narzędzia
 check_dependencies() {
     print_step "Checking system dependencies..."
 
@@ -73,6 +78,7 @@ check_dependencies() {
     fi
 }
 
+# Tworzenie struktury katalogów
 create_directories() {
     print_step "Creating directory structure..."
 
@@ -113,6 +119,7 @@ create_directories() {
     fi
 }
 
+# Kopiowanie plików
 copy_files() {
     print_step "Copying files..."
 
@@ -152,6 +159,7 @@ copy_files() {
     fi
 }
 
+# Aktualizacja ścieżek w config.conf dla instalacji w /opt
 update_config() {
     if [[ "$INSTALL_TARGET" != "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" ]]; then
         print_step "Updating configuration paths..."
@@ -164,6 +172,7 @@ update_config() {
     fi
 }
 
+# Konfiguracja SSH dla central host (opcjonalne)
 configure_ssh() {
     print_step "SSH Configuration (optional)"
 
@@ -182,6 +191,7 @@ configure_ssh() {
     echo ""
 }
 
+# Test instalacji
 test_installation() {
     print_step "Testing installation..."
 
@@ -205,6 +215,7 @@ test_installation() {
     return 0
 }
 
+# Wyświetl podsumowanie
 show_summary() {
     echo ""
     echo -e "${GREEN}${BOLD}=========================================="

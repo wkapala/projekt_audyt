@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
+# Załaduj konfigurację i bibliotekę
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/config.conf"
 LIB_FILE="${SCRIPT_DIR}/audyt_lib.sh"
@@ -26,6 +27,7 @@ header() {
     echo -e "${CYAN}${BOLD}==========================================${RESET}"
 }
 
+# Funkcja pomocy
 show_help() {
     cat << EOF
 Usage: $(basename "$0") [OPTION]
@@ -51,9 +53,11 @@ EOF
     exit 0
 }
 
+# Parsowanie parametrów
 run_modules=()
 
 if [[ $# -eq 0 ]]; then
+    # Brak parametrów - tryb interaktywny (będzie później)
     INTERACTIVE_MODE=1
 else
     INTERACTIVE_MODE=0
@@ -91,6 +95,7 @@ else
     done
 fi
 
+# --- TRYB Z PARAMETRAMI: uruchom wybrane moduły ---
 if [[ $INTERACTIVE_MODE -eq 0 ]]; then
     if [[ ${#run_modules[@]} -eq 0 ]]; then
         echo "ERROR: No modules selected" >&2
@@ -109,6 +114,7 @@ if [[ $INTERACTIVE_MODE -eq 0 ]]; then
     exit 0
 fi
 
+# --- TRYB MENU INTERAKTYWNEGO ---
 while true; do
     header
     echo ""

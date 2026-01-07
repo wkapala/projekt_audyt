@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Załaduj bibliotekę (która automatycznie załaduje config.conf)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_FILE="${SCRIPT_DIR}/../audyt_lib.sh"
 
@@ -10,6 +11,7 @@ fi
 
 source "$LIB_FILE"
 
+# Walidacja wymaganych narzędzi
 check_required_tools df awk || exit 1
 
 echo "-------------------[ DISK AUDIT ]---------------------"
@@ -20,8 +22,9 @@ echo ""
 
 echo "Partitions above ${DISK_WARNING_THRESHOLD}% usage:"
 critical=0
+# pomijamy nagłówek (NR>1)
 while read -r fs size used avail pct mount; do
-    use_pct=${pct%%%}   # trim %
+    use_pct=${pct%%%}   # obetnij %
     if [ "$use_pct" -gt "$DISK_WARNING_THRESHOLD" ]; then
         echo -e "  ${YELLOW}$fs ($mount) - ${BOLD}$pct used${RESET}"
         critical=1

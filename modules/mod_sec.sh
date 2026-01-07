@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Załaduj bibliotekę (która automatycznie załaduje config.conf)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_FILE="${SCRIPT_DIR}/../audyt_lib.sh"
 
@@ -10,6 +11,7 @@ fi
 
 source "$LIB_FILE"
 
+# Walidacja wymaganych narzędzi
 check_required_tools who grep tail last || exit 1
 
 echo "----------------[ SECURITY AUDIT ]--------------------"
@@ -38,12 +40,14 @@ else
 fi
 echo ""
 
+# Wyłącz pipefail na chwilę (SIGPIPE od `last | head` nie powinien zabijać skryptu)
 set +e
 echo "--- RECENT LOGINS (last 10) ---"
 last 2>/dev/null | head -n 10
 last_status=$?
 set -e
 
+# Exit code 0 lub 141 (SIGPIPE) są OK - inne oznaczają błąd dostępu do wtmp
 if [ $last_status -ne 0 ] && [ $last_status -ne 141 ]; then
   echo "  (unable to access login records - /var/log/wtmp may not be readable)"
 fi

@@ -5,6 +5,7 @@
 
 set -euo pipefail
 
+# Kolory
 GREEN="\e[32m"
 YELLOW="\e[33m"
 RED="\e[31m"
@@ -28,12 +29,14 @@ print_error() {
     echo -e "${RED}${BOLD}✗${RESET} $*" >&2
 }
 
+# Sprawdź czy uruchomione jako root
 if [[ $EUID -ne 0 ]]; then
     print_error "This script must be run as root (systemd requires it)"
     echo "Please run: sudo $0"
     exit 1
 fi
 
+# Sprawdź czy systemd jest dostępny
 if ! command -v systemctl &>/dev/null; then
     print_error "systemd is not available on this system"
     echo "Use setup_cron.sh instead"
