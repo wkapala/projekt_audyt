@@ -168,7 +168,15 @@ sudo ./install.sh
 # - Sprawdzi zależności
 # - Stworzy katalogi
 # - Skopiuje pliki do /opt/sysaudit
+
+# 4. Dodaj użytkownika do grupy adm (wymagane dla modułu Security)
+sudo usermod -aG adm $USER
+
+# 5. Wyloguj się i zaloguj ponownie (lub użyj newgrp)
+newgrp adm
 ```
+
+**Uwaga:** Grupa `adm` jest wymagana do odczytu `/var/log/auth.log`, co umożliwia modułowi Security zbieranie informacji o failed logins.
 
 ---
 
