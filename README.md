@@ -138,12 +138,7 @@ cd projekt_audyt
 sudo ./install.sh
 # Wybierz opcję 1 (production - /opt/sysaudit)
 
-# 3. Utwórz użytkownika audit (jeśli nie istnieje)
-sudo useradd -m -s /bin/bash audit
-sudo passwd audit
 
-# 4. Dodaj użytkownika do grupy adm (dostęp do logów)
-sudo usermod -aG adm audit
 ```
 
 **Katalog `central_reports` zostanie utworzony automatycznie przy pierwszym wysłaniu raportu przez klienta.**
@@ -1068,4 +1063,13 @@ groups
 ```
 
 **Uwaga:** Plik `/var/log/auth.log` zawiera wrażliwe informacje bezpieczeństwa i wymaga uprawnień grupy `adm`.
+
+
+
+# 3. Utwórz użytkownika audit (jeśli nie istnieje)
+sudo useradd -m -s /bin/bash audit
+sudo passwd audit
+
+# 4. Dodaj użytkownika do grupy adm (dostęp do logów)
+sudo usermod -aG adm audit
 
