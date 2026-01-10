@@ -131,7 +131,7 @@ Na hoście centralnym:
 ```bash
 # 1. Sklonuj projekt
 cd ~
-git clone <repository-url> projekt_audyt
+git clone https://github.com/wkapala/projekt_audyt.git projekt_audyt
 cd projekt_audyt
 
 # 2. Uruchom instalator
